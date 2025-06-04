@@ -1,10 +1,16 @@
-import { Router } from 'express';
-const router = Router();
-import auth from '../middleware/authMiddleware';
-import { savePassword, getPasswords, validateAccessKey, getPassword } from '../controllers/passwordController';
+import express from 'express';
+import auth from '../middleware/authMiddleware.js';
+import {
+  savePassword,
+  getPasswords,
+  validateAccessKey,
+  getPassword
+} from '../controllers/passwordController.js';
+
+const router = express.Router();
 
 router.use(auth);
-router.post('/', savePassword);
+router.post('/create', savePassword);
 router.get('/', getPasswords);
 router.post('/validate-access-key', validateAccessKey);
 router.get('/:site', getPassword);

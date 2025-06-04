@@ -1,4 +1,4 @@
-import { verify } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 const SECRET = 'supersecreto';
 
 export default (req, res, next) => {
@@ -7,7 +7,7 @@ export default (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = verify(token, SECRET);
+    const decoded = jwt.verify(token, SECRET);
     req.user = decoded;
     next();
   } catch (e) {

@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "password": "$2b$10$JGmDbXjtoLq1HJvvCv6U1OL3sHGb6x22BOc8CxTffsm9/pQ64Ymwq",
+      "passwords": []
+    },
+    {
+      "username": "usuario123",
+      "password": "$2b$10$opYWZqnj4U5MwoLc08kbZOfj1WnBBxfH7JAu7AS1rba/QsKAMGH4.",
+      "passwords": [
+        {
+          "site": "www.github.com",
+          "encrypted": "bc43e3ea4a490794b24900089a76f0d4",
+          "iv": "d14510bde17800f933fd1b457f3b3a34"
+        },
+        {
+          "site": "http://www.instagram.com",
+          "siteName": "instagram.com",
+          "siteUsername": "mvnieto",
+          "encrypted": "09ba0f391f68477f5067188109bc8828",
+          "iv": "dc241f6ec808e2c846774c9571f68cf0"
+        },
+        {
+          "site": "http://www.google.com",
+          "siteName": "google.com",
+          "siteUsername": "mvnieto",
+          "encrypted": "dcbe88c58ad6e214ac2e135ab5815189",
+          "iv": "f0c56d796705e0c0c772606bba75a3a3"
+        }
+      ]
+    },
+    {
+      "username": "usuario1234",
+      "email": "usuario@email.com",
+      "password": "$2b$10$cC6QI72O9zjHlz6lzu1zHuQbMr.fYmI4zb8UCJ7qEUgDsgT./xWVG",
+      "passwords": []
+    }
+  ]
+}
