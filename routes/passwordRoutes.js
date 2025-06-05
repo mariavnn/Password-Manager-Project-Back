@@ -4,7 +4,8 @@ import {
   savePassword,
   getPasswords,
   validateAccessKey,
-  getPassword
+  getPassword,
+  markAsFavorite
 } from '../controllers/passwordController.js';
 
 const router = express.Router();
@@ -13,6 +14,7 @@ router.use(auth);
 router.post('/create', savePassword);
 router.get('/', getPasswords);
 router.post('/validate-access-key', validateAccessKey);
-router.get('/:site', getPassword);
+router.get('/:siteName', getPassword);
+router.put('/:id/favorite', markAsFavorite);
 
 export default router;

@@ -1,3 +1,47 @@
 {
-  "users": []
+  "users": [
+    {
+      "username": "mvnieto",
+      "email": "marianieto290520@gmail.com",
+      "password": "$2b$10$HEHO9qW5vQhk0fIng4nNrOsJDptLZXuNVpv7P7Z6kCiCw71NC6tui",
+      "passwords": [
+        {
+          "id": "c641e17b-dd0e-48e9-8b91-4c946de1db25",
+          "site": "https://www.instagram.com",
+          "siteName": "www.instagram.com",
+          "siteUsername": "mvnieto",
+          "encrypted": "02cfec91e11675493609365a39f992ef",
+          "iv": "dbf2ecbe3e0d80deb49bb1ab41b7cd5a",
+          "favorito": true
+        },
+        {
+          "id": "fe1655f7-c312-40fd-8c6d-f39fe777e350",
+          "site": "http://www.facebook.com",
+          "siteName": "www.facebook.com",
+          "siteUsername": "mariavnn",
+          "encrypted": "68c9a39b1900a69607de35d7ac17bfbf",
+          "iv": "ef6ab4126e0d5d884dc3ec86fc96de03",
+          "favorito": false
+        },
+        {
+          "id": "3540521e-df52-4a71-8f91-b4c492b153d9",
+          "site": "http://www.github.com",
+          "siteName": "www.github.com",
+          "siteUsername": "mariavnn",
+          "encrypted": "31d1a2cab8f9259dec92bb215ffa7ceb",
+          "iv": "f7127981447fef19b8a63c3ccc067121",
+          "favorito": false
+        },
+        {
+          "id": "7b063ef1-7bad-4306-b05b-6d4750b94f30",
+          "site": "http://www.github.com",
+          "siteName": "www.github.com",
+          "siteUsername": "mariavnn",
+          "encrypted": "3374ec1bec0e76797fcd3a8f4787becf",
+          "iv": "155327ba5fded290c5fe4975b9a965ca",
+          "favorito": false
+        }
+      ]
+    }
+  ]
 }

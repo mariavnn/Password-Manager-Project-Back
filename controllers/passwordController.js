@@ -1,4 +1,5 @@
 import { readDB, writeDB } from '../config/db.js';
+import { v4 as uuidv4 } from 'uuid';
 import { encrypt, decrypt, comparePassword } from '../utils/cryptoUtils.js';
 
 export function savePassword(req, res) {
@@ -18,12 +19,36 @@ export function savePassword(req, res) {
 
   const db = readDB();
   const user = db.users.find(u => u.username === username);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+  // ⚠️ Verificar si ya existe una entrada con el mismo site y siteUsername
+  const alreadyExists = user.passwords.some(
+    (entry) =>
+      entry.site === site &&
+      entry.siteUsername === siteUsername
+  );
+
+  if (alreadyExists) {
+    return res.status(409).json({ error: 'La contraseña para este sitio y usuario ya existe' });
+  }
+
   const { encrypted, iv } = encrypt(password);
 
-  user.passwords.push({ site, siteName, siteUsername, encrypted, iv });
+  const newPasswordEntry = {
+    id: uuidv4(),
+    site,
+    siteName,
+    siteUsername,
+    encrypted,
+    iv,
+    favorito: false
+  };
+
+  user.passwords.push(newPasswordEntry);
   writeDB(db);
   res.json({ message: 'Contraseña guardada' });
 }
+
 
 
 
@@ -34,10 +59,13 @@ export function getPasswords(req, res) {
 
   res.json(
     user.passwords.map(p => ({
-      siteName: p.siteName
+      id: p.id,
+      siteName: p.siteName,
+      favorito: p.favorito
     }))
   );
 }
+
 
 
 export async function validateAccessKey(req, res) {
@@ -53,20 +81,40 @@ export async function validateAccessKey(req, res) {
 
 export function getPassword(req, res) {
   const { username } = req.user;
-  const { site } = req.params;
+  const { siteName } = req.params;
+
 
   const db = readDB();
   const user = db.users.find(u => u.username === username);
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-  const entry = user.passwords.find(p => p.site === site);
-  if (!entry) return res.status(404).json({ error: 'Contraseña no encontrada' });
+  const entry = user.passwords.find(p => p.siteName === siteName);
+  if (!entry) return res.status(404).json({ error: 'Contraseña no encontrada para este sitio' });
 
   const decrypted = decrypt(entry.encrypted, entry.iv);
 
-  res.json({
-    username: user.username,
+  return res.json({
+    username: entry.siteUsername,
     site: entry.site,
     password: decrypted,
   });
 }
+
+
+export function markAsFavorite(req, res) {
+  const { username } = req.user;
+  const { id } = req.params;
+
+  const db = readDB();
+  const user = db.users.find(u => u.username === username);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+  const entry = user.passwords.find(p => p.id === id);
+  if (!entry) return res.status(404).json({ error: 'Contraseña no encontrada' });
+
+  entry.favorito = true;
+  writeDB(db);
+
+  res.json({ message: 'Contraseña marcada como favorita' });
+}
+
