@@ -14,7 +14,7 @@ export function savePassword(req, res) {
     return res.status(400).json({ error: 'El sitio debe ser una URL válida que empiece con http:// o https://' });
   }
 
-  const siteName = site.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  const siteName = site.replace(/^https?:\/\//i, '');
 
   const db = readDB();
   const user = db.users.find(u => u.username === username);
@@ -50,15 +50,23 @@ export async function validateAccessKey(req, res) {
   res.json({ valid });
 }
 
+
 export function getPassword(req, res) {
   const { username } = req.user;
   const { site } = req.params;
 
   const db = readDB();
   const user = db.users.find(u => u.username === username);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
   const entry = user.passwords.find(p => p.site === site);
-  if (!entry) return res.status(404).json({ error: 'No encontrada' });
+  if (!entry) return res.status(404).json({ error: 'Contraseña no encontrada' });
 
   const decrypted = decrypt(entry.encrypted, entry.iv);
-  res.json({ password: decrypted });
+
+  res.json({
+    username: user.username,
+    site: entry.site,
+    password: decrypted,
+  });
 }
