@@ -9,7 +9,7 @@ const SECRET = process.env.SECRET_KEY;
 
 export async function register(req, res) {
   const { email, username, password } = req.body;
-
+  console.log('BODY REGISTRO ', req.body);
   const db = readDB();
 
   const existsUser = db.users.find(u => u.username === username);
