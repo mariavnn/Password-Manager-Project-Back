@@ -10,6 +10,7 @@ const SECRET = process.env.SECRET_KEY;
 export async function register(req, res) {
   const { email, username, password } = req.body;
   const db = readDB();
+  console.log('BODY REGISTRO ', req.body);
 
   const existsUser = db.users.find(u => u.username === username);
   const existsEmail = db.users.find(u => u.email === email);
@@ -20,7 +21,7 @@ export async function register(req, res) {
   const hashed = await hashPassword(password);
 
   db.users.push({ username: username, email, email, password: hashed, passwords: [] });
-
+  console.log('ERROR');
   writeDB(db);
   res.json({ message: 'Registrado exitosamente' });
 }
