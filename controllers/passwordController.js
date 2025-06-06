@@ -10,7 +10,7 @@ export async function savePassword(req, res) {
     return res.status(400).json({ error: 'Faltan campos requeridos (site, siteUsername o password)' });
   }
 
-  const urlRegex = /^https?:\/\/([a-zA-Z0-9.-]+\.)?([a-zA-Z0-9-]+)\.com(\/.*)?$/i;
+  const urlRegex = /^https?:\/\/([a-zA-Z0-9.-]+\.)?([a-zA-Z0-9-]+)\.com$/i;
   if (!urlRegex.test(site)) {
     return res.status(400).json({ error: 'El sitio debe comenzar con http:// o https:// y terminar en .com' });
   }
