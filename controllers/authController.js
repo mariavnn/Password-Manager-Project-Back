@@ -1,42 +1,67 @@
 import jwt from 'jsonwebtoken';
-import { readDB, writeDB } from '../config/db.js';
-import { hashPassword, comparePassword } from '../utils/cryptoUtils.js';
 import dotenv from 'dotenv';
+import { conn } from '../config/supabaseClient.js';
+import { hashPassword, comparePassword } from '../utils/cryptoUtils.js';
 
 dotenv.config();
-
 const SECRET = process.env.SECRET_KEY;
 
 export async function register(req, res) {
   const { email, username, password } = req.body;
-  const db = readDB();
-  console.log('BODY REGISTRO ', req.body);
 
-  const existsUser = db.users.find(u => u.username === username);
-  const existsEmail = db.users.find(u => u.email === email);
+  if (!email || !username || !password) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios' });
+  }
 
-  if (existsUser) return res.status(400).json({ error: 'Usuario ya existe' });
-  if (existsEmail) return res.status(400).json({ error: 'Email ya registrado' });
+  // Verificar usuario o email existente
+  const { data: existingUser, error: userError } = await conn
+    .from('users')
+    .select()
+    .or(`username.eq.${username},email.eq.${email}`);
+
+  if (userError) {
+    console.error('Error consultando Supabase:', userError);
+    return res.status(500).json({ error: 'Error consultando Supabase' });
+  }
+
+  if (existingUser.length > 0) {
+    const existing = existingUser[0];
+    if (existing.username === username) return res.status(400).json({ error: 'Usuario ya existe' });
+    if (existing.email === email) return res.status(400).json({ error: 'Email ya registrado' });
+  }
 
   const hashed = await hashPassword(password);
 
-  db.users.push({ username: username, email, email, password: hashed, passwords: [] });
-  console.log('ERROR');
-  writeDB(db);
-  res.json({ message: 'Registrado exitosamente' });
+  const { error: insertError } = await conn
+    .from('users')
+    .insert([{ username, email, password: hashed }]);
+
+  if (insertError) {
+    console.error('Error al insertar usuario:', insertError);
+    return res.status(500).json({ error: insertError.message || 'Error al registrar usuario' });
+  }
+
+  return res.json({ message: 'Registrado exitosamente' });
 }
 
 
 export async function login(req, res) {
   const { username, password } = req.body;
- 
-  const db = readDB();
-  const user = db.users.find(u => u.username === username);
-  if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+  const { data: user, error } = await conn
+    .from('users')
+    .select()
+    .eq('username', username)
+    .single();
+
+  if (error || !user) {
+    return res.status(401).json({ error: 'Credenciales inválidas' });
+  }
 
   const valid = await comparePassword(password, user.password);
   if (!valid) return res.status(401).json({ error: 'Credenciales inválidas' });
 
-  const token = jwt.sign({ username }, SECRET);
+  const token = jwt.sign({ username }, SECRET, { expiresIn: '1h' });
+
   res.json({ token });
 }

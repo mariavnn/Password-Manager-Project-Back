@@ -1,8 +1,8 @@
-import { readDB, writeDB } from '../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { encrypt, decrypt, comparePassword } from '../utils/cryptoUtils.js';
+import { conn } from '../config/supabaseClient.js';
 
-export function savePassword(req, res) {
+export async function savePassword(req, res) {
   const { username } = req.user;
   const { site, siteUsername, password } = req.body;
 
@@ -17,18 +17,23 @@ export function savePassword(req, res) {
 
   const siteName = site.replace(/^https?:\/\//i, '');
 
-  const db = readDB();
-  const user = db.users.find(u => u.username === username);
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  const { data: user, error: userError } = await conn
+    .from('users')
+    .select('*')
+    .eq('username', username)
+    .single();
 
-  // ⚠️ Verificar si ya existe una entrada con el mismo site y siteUsername
-  const alreadyExists = user.passwords.some(
-    (entry) =>
-      entry.site === site &&
-      entry.siteUsername === siteUsername
-  );
+  if (userError || !user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-  if (alreadyExists) {
+  const { data: existingPassword, error: passError } = await conn
+    .from('stored_passwords')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('site', site)
+    .eq('site_username', siteUsername)
+    .single();
+
+  if (existingPassword) {
     return res.status(409).json({ error: 'La contraseña para este sitio y usuario ya existe' });
   }
 
@@ -36,85 +41,125 @@ export function savePassword(req, res) {
 
   const newPasswordEntry = {
     id: uuidv4(),
+    user_id: user.id,
     site,
-    siteName,
-    siteUsername,
+    site_name: siteName,
+    site_username: siteUsername,
     encrypted,
     iv,
     favorito: false
   };
 
-  user.passwords.push(newPasswordEntry);
-  writeDB(db);
+  const { error: insertError } = await conn
+    .from('stored_passwords')
+    .insert(newPasswordEntry);
+
+  if (insertError) {
+    return res.status(500).json({ error: 'Error guardando la contraseña' });
+  }
+
   res.json({ message: 'Contraseña guardada' });
 }
 
 
-
-
-export function getPasswords(req, res) {
+export async function getPasswords(req, res) {
   const { username } = req.user;
-  const db = readDB();
-  const user = db.users.find(u => u.username === username);
 
-  res.json(
-    user.passwords.map(p => ({
-      id: p.id,
-      siteName: p.siteName,
-      favorito: p.favorito
-    }))
-  );
+  const { data: user, error: userError } = await conn
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (userError || !user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+  const { data: passwords, error: passError } = await conn
+    .from('stored_passwords')
+    .select('id, site_name, favorito')
+    .eq('user_id', user.id);
+
+  if (passError) return res.status(500).json({ error: 'Error al obtener contraseñas' });
+
+  res.json(passwords);
 }
-
 
 
 export async function validateAccessKey(req, res) {
   const { username } = req.user;
   const { accessKey } = req.body;
 
-  const db = readDB();
-  const user = db.users.find(u => u.username === username);
+
+  const { data: user, error: userError } = await conn
+    .from('users')
+    .select('password')
+    .eq('username', username)
+    .single();
+
+  if (userError || !user) return res.status(404).json({ valid: false });
+
   const valid = await comparePassword(accessKey, user.password);
   res.json({ valid });
 }
 
 
-export function getPassword(req, res) {
+export async function getPassword(req, res) {
   const { username } = req.user;
   const { siteName } = req.params;
 
+  const { data: user, error: userError } = await conn
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single();
 
-  const db = readDB();
-  const user = db.users.find(u => u.username === username);
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (userError || !user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-  const entry = user.passwords.find(p => p.siteName === siteName);
-  if (!entry) return res.status(404).json({ error: 'Contraseña no encontrada para este sitio' });
+  const { data: entry, error: entryError } = await conn
+    .from('stored_passwords')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('site_name', siteName)
+    .single();
+
+  if (entryError || !entry) return res.status(404).json({ error: 'Contraseña no encontrada para este sitio' });
 
   const decrypted = decrypt(entry.encrypted, entry.iv);
 
   return res.json({
-    username: entry.siteUsername,
+    username: entry.site_username,
     site: entry.site,
     password: decrypted,
   });
 }
 
 
-export function markAsFavorite(req, res) {
+export async function markAsFavorite(req, res) {
   const { username } = req.user;
   const { id } = req.params;
 
-  const db = readDB();
-  const user = db.users.find(u => u.username === username);
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  const { data: user, error: userError } = await conn
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single();
 
-  const entry = user.passwords.find(p => p.id === id);
-  if (!entry) return res.status(404).json({ error: 'Contraseña no encontrada' });
+  if (userError || !user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-  entry.favorito = true;
-  writeDB(db);
+  const { data: entry, error: entryError } = await conn
+    .from('stored_passwords')
+    .select('id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (entryError || !entry) return res.status(404).json({ error: 'Contraseña no encontrada' });
+
+  const { error: updateError } = await conn
+    .from('stored_passwords')
+    .update({ favorito: true })
+    .eq('id', id);
+
+  if (updateError) return res.status(500).json({ error: 'Error actualizando favorito' });
 
   res.json({ message: 'Contraseña marcada como favorita' });
 }
-
