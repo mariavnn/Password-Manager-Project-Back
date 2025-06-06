@@ -6,7 +6,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbPath = path.join(__dirname, '..', 'db.json');
+const dbPath = path.join(__dirname, '..', 'database', 'db.json');
 
 export function readDB() {
   try {
